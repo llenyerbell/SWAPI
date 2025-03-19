@@ -5,5 +5,8 @@
   "devDependencies": {
     "@types/aws-lambda": "~8",
     "@types/node": "^22.13.10"
+  },
+  "dependencies": {
+    "node-cache": "^5.1.2"
   }
 }

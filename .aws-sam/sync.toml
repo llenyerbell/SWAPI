@@ -21,5 +21,5 @@ hash = "0c347869e29a65a3bd887bc5d2ed7dafa8741f22e3f9fe4175919f6fa77c5c9c"
 sync_time = "2025-03-19T06:35:23.450224"
 
 [resource_sync_states."ZipFunctionSyncFlow:GetFusion"]
-hash = "c1dbac3e45b6016e2cdaed8299107cb18702a596b7e6bfa7dcb7a71462e2e579"
-sync_time = "2025-03-19T05:12:27.492761"
+hash = "0dbeefa72624edb2097b67e421f3fb6d3628aab0c7f637647efe2a58f9233a1f"
+sync_time = "2025-03-19T18:17:45.736464"
