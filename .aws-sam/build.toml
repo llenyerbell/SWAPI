@@ -53,6 +53,7 @@ Minify = false
 
 
 
+
 [function_build_definitions.117e7a43-8b8d-4836-b20b-106c64e3ac3e]
 codeuri = "c:\\Users\\xegoa\\awsProject\\SWAPI\\src\\ListarPlanetas"
 runtime = "nodejs20.x"
@@ -69,6 +70,7 @@ BuildMethod = "esbuild"
 EntryPoints = ["index.mts"]
 External = ["@aws-sdk/*", "aws-sdk"]
 Minify = false
+
 
 
 
@@ -157,6 +159,7 @@ Minify = false
 
 
 
+
 [function_build_definitions.e54d8c37-0f4e-430b-b10e-2138f6ab5d32]
 codeuri = "c:\\Users\\xegoa\\awsProject\\SWAPI\\src\\GetFusion"
 runtime = "nodejs20.x"
@@ -189,6 +192,7 @@ Minify = false
 
 
 
+
 [function_build_definitions.d4a03b45-95d3-45e8-bfa8-b93f97898f88]
 codeuri = "c:\\Users\\xegoa\\awsProject\\SWAPI\\src\\CreateDataFusion"
 runtime = "nodejs20.x"
@@ -205,6 +209,7 @@ BuildMethod = "esbuild"
 EntryPoints = ["index.mts"]
 External = ["@aws-sdk/*", "aws-sdk"]
 Minify = false
+
 
 
 

@@ -6382,40 +6382,6 @@ function fixResponseChunkedTransferBadEnding(request, errorCallback) {
   });
 }
 
-// cache.ts
-var import_client_dynamodb = require("@aws-sdk/client-dynamodb");
-var import_lib_dynamodb = require("@aws-sdk/lib-dynamodb");
-var ddbClient = new import_client_dynamodb.DynamoDBClient({ region: "us-east-1" });
-var docClient = import_lib_dynamodb.DynamoDBDocumentClient.from(ddbClient);
-var CACHE_TABLE_NAME = "CacheTable";
-var TTL_SECONDS = 30 * 60;
-async function getOrSetCache(cacheKey, fetchFn) {
-  const cachedItem = await docClient.send(
-    new import_lib_dynamodb.GetCommand({
-      TableName: CACHE_TABLE_NAME,
-      Key: { cacheKey }
-    })
-  );
-  const nowInSeconds = Math.floor(Date.now() / 1e3);
-  if (cachedItem.Item && cachedItem.Item.expiresAt > nowInSeconds) {
-    console.log(`Devolviendo datos desde la cach\xE9 \u2192 key: ${cacheKey}`);
-    return cachedItem.Item.data;
-  }
-  const freshData = await fetchFn();
-  const expiresAt = nowInSeconds + TTL_SECONDS;
-  await docClient.send(
-    new import_lib_dynamodb.PutCommand({
-      TableName: CACHE_TABLE_NAME,
-      Item: {
-        cacheKey,
-        data: freshData,
-        expiresAt
-      }
-    })
-  );
-  return freshData;
-}
-
 // index.mts
 var calcularDistancia = (lat1, lon1, lat2, lon2) => {
   const R = 6371;
@@ -6426,20 +6392,24 @@ var calcularDistancia = (lat1, lon1, lat2, lon2) => {
   const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
   return R * c;
 };
-async function fetchPersonajes() {
-  const response = await fetch("https://hf33no971k.execute-api.us-east-1.amazonaws.com/Prod/listPersonajes");
-  if (!response.ok) {
-    throw new Error(`Error HTTP al obtener personajes: ${response.status}`);
+var getPersonajes = async () => {
+  try {
+    const response = await fetch("https://hf33no971k.execute-api.us-east-1.amazonaws.com/Prod/listPersonajes");
+    const data = await response.json();
+    return data;
+  } catch (error) {
+    return false;
   }
-  return await response.json();
-}
-async function fetchPlanetas() {
-  const response = await fetch("https://hf33no971k.execute-api.us-east-1.amazonaws.com/Prod/listPlanetas");
-  if (!response.ok) {
-    throw new Error(`Error HTTP al obtener planetas: ${response.status}`);
+};
+var getPlanetas = async () => {
+  try {
+    const response = await fetch("https://hf33no971k.execute-api.us-east-1.amazonaws.com/Prod/listPlanetas");
+    const data = await response.json();
+    return data;
+  } catch (error) {
+    return false;
   }
-  return await response.json();
-}
+};
 var getFusion = async (id) => {
   try {
     const response = await fetch(`https://hf33no971k.execute-api.us-east-1.amazonaws.com/Prod/getFusion?id=${id}`);
@@ -6470,8 +6440,8 @@ var createFusion = async (bodyData) => {
 };
 var handler = async () => {
   try {
-    const personajes = await getOrSetCache("listPersonajes", fetchPersonajes);
-    const planetas = await getOrSetCache("listPlanetas", fetchPlanetas);
+    const personajes = await getPersonajes();
+    const planetas = await getPlanetas();
     let fusionados = [];
     for (let personaje of personajes.data) {
       const validarExistencia = await getFusion(personaje.id);
