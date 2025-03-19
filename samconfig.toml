@@ -1,0 +1,11 @@
+version = 0.1
+
+[default.global.parameters]
+stack_name = "API-SW"
+region = "us-east-1"
+
+[default.sync.parameters]
+template_file = "c:\\Users\\xegoa\\awsProject\\SWAPI\\api.yml"
+s3_bucket = "simple-api-aksdmasodoqkw"
+dependency_layer = false
+watch = true

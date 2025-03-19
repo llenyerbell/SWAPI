@@ -1,0 +1,358 @@
+Transform: AWS::Serverless-2016-10-31
+Resources:
+  Api:
+    Type: AWS::Serverless::Api
+    Properties:
+      Name:
+        Fn::Sub:
+        - ${ResourceName} From Stack ${AWS::StackName}
+        - ResourceName: Api
+      StageName: Prod
+      DefinitionBody:
+        openapi: '3.0'
+        info: {}
+        paths:
+          /listPersonajes:
+            get:
+              x-amazon-apigateway-integration:
+                httpMethod: POST
+                type: aws_proxy
+                uri:
+                  Fn::Sub: arn:${AWS::Partition}:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${ListarPersonajes.Arn}/invocations
+              responses: {}
+          /listPlanetas:
+            get:
+              x-amazon-apigateway-integration:
+                httpMethod: POST
+                type: aws_proxy
+                uri:
+                  Fn::Sub: arn:${AWS::Partition}:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${ListarPlanetas.Arn}/invocations
+              responses: {}
+          /personajesWithPlanetas:
+            get:
+              x-amazon-apigateway-integration:
+                httpMethod: POST
+                type: aws_proxy
+                uri:
+                  Fn::Sub: arn:${AWS::Partition}:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${FusionData.Arn}/invocations
+              responses: {}
+          /getFusion:
+            get:
+              x-amazon-apigateway-integration:
+                httpMethod: POST
+                type: aws_proxy
+                uri:
+                  Fn::Sub: arn:${AWS::Partition}:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${GetFusion.Arn}/invocations
+              responses: {}
+          /createDataFusion:
+            post:
+              x-amazon-apigateway-integration:
+                httpMethod: POST
+                type: aws_proxy
+                uri:
+                  Fn::Sub: arn:${AWS::Partition}:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${CreateDataFusion.Arn}/invocations
+              responses: {}
+      EndpointConfiguration: REGIONAL
+      TracingEnabled: true
+      Cors:
+        MaxAge: 5
+  personajes:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      AttributeDefinitions:
+      - AttributeName: id
+        AttributeType: S
+      BillingMode: PAY_PER_REQUEST
+      KeySchema:
+      - AttributeName: id
+        KeyType: HASH
+      StreamSpecification:
+        StreamViewType: NEW_AND_OLD_IMAGES
+  planetas:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      AttributeDefinitions:
+      - AttributeName: id
+        AttributeType: S
+      BillingMode: PAY_PER_REQUEST
+      KeySchema:
+      - AttributeName: id
+        KeyType: HASH
+      StreamSpecification:
+        StreamViewType: NEW_AND_OLD_IMAGES
+  ListarPersonajes:
+    Type: AWS::Serverless::Function
+    Properties:
+      Description:
+        Fn::Sub:
+        - Stack ${AWS::StackName} Function ${ResourceName}
+        - ResourceName: ListarPersonajes
+      CodeUri: ListarPersonajes
+      Handler: index.handler
+      Runtime: nodejs20.x
+      MemorySize: 3008
+      Timeout: 30
+      Tracing: Active
+      Events:
+        ApiGETlistPersonajes:
+          Type: Api
+          Properties:
+            Path: /listPersonajes
+            Method: GET
+            RestApiId:
+              Ref: Api
+      Environment:
+        Variables:
+          PERSONAJES_TABLE_NAME:
+            Ref: personajes
+          PERSONAJES_TABLE_ARN:
+            Fn::GetAtt:
+            - personajes
+            - Arn
+      Policies:
+      - DynamoDBCrudPolicy:
+          TableName:
+            Ref: personajes
+    Metadata:
+      BuildMethod: esbuild
+      BuildProperties:
+        EntryPoints:
+        - index.mts
+        External:
+        - '@aws-sdk/*'
+        - aws-sdk
+        Minify: false
+      SamResourceId: ListarPersonajes
+  ListarPersonajesLogGroup:
+    Type: AWS::Logs::LogGroup
+    DeletionPolicy: Retain
+    Properties:
+      LogGroupName:
+        Fn::Sub: /aws/lambda/${ListarPersonajes}
+  ListarPlanetas:
+    Type: AWS::Serverless::Function
+    Properties:
+      Description:
+        Fn::Sub:
+        - Stack ${AWS::StackName} Function ${ResourceName}
+        - ResourceName: ListarPlanetas
+      CodeUri: ListarPlanetas
+      Handler: index.handler
+      Runtime: nodejs20.x
+      MemorySize: 3008
+      Timeout: 30
+      Tracing: Active
+      Events:
+        ApiGETlistPlanetas:
+          Type: Api
+          Properties:
+            Path: /listPlanetas
+            Method: GET
+            RestApiId:
+              Ref: Api
+      Environment:
+        Variables:
+          PLANETAS_TABLE_NAME:
+            Ref: planetas
+          PLANETAS_TABLE_ARN:
+            Fn::GetAtt:
+            - planetas
+            - Arn
+      Policies:
+      - DynamoDBCrudPolicy:
+          TableName:
+            Ref: planetas
+    Metadata:
+      BuildMethod: esbuild
+      BuildProperties:
+        EntryPoints:
+        - index.mts
+        External:
+        - '@aws-sdk/*'
+        - aws-sdk
+        Minify: false
+      SamResourceId: ListarPlanetas
+  ListarPlanetasLogGroup:
+    Type: AWS::Logs::LogGroup
+    DeletionPolicy: Retain
+    Properties:
+      LogGroupName:
+        Fn::Sub: /aws/lambda/${ListarPlanetas}
+  FusionData:
+    Type: AWS::Serverless::Function
+    Properties:
+      Description:
+        Fn::Sub:
+        - Stack ${AWS::StackName} Function ${ResourceName}
+        - ResourceName: FusionData
+      CodeUri: FusionData
+      Handler: index.handler
+      Runtime: nodejs20.x
+      MemorySize: 3008
+      Timeout: 30
+      Tracing: Active
+      Environment:
+        Variables:
+          DATAFUSIONADALOG_TABLE_NAME:
+            Ref: dataFusionadaLog
+          DATAFUSIONADALOG_TABLE_ARN:
+            Fn::GetAtt:
+            - dataFusionadaLog
+            - Arn
+          CACHE_TABLE_NAME:
+            Ref: CacheTable
+      Events:
+        ApiGETpersonajesWithPlanetas:
+          Type: Api
+          Properties:
+            Path: /personajesWithPlanetas
+            Method: GET
+            RestApiId:
+              Ref: Api
+      Policies:
+      - DynamoDBCrudPolicy:
+          TableName:
+            Ref: dataFusionadaLog
+      - DynamoDBCrudPolicy:
+          TableName:
+            Ref: CacheTable
+    Metadata:
+      BuildMethod: esbuild
+      BuildProperties:
+        EntryPoints:
+        - index.mts
+        External:
+        - '@aws-sdk/*'
+        - aws-sdk
+        Minify: false
+      SamResourceId: FusionData
+  FusionDataLogGroup:
+    Type: AWS::Logs::LogGroup
+    DeletionPolicy: Retain
+    Properties:
+      LogGroupName:
+        Fn::Sub: /aws/lambda/${FusionData}
+  dataFusionadaLog:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      AttributeDefinitions:
+      - AttributeName: id
+        AttributeType: S
+      BillingMode: PAY_PER_REQUEST
+      KeySchema:
+      - AttributeName: id
+        KeyType: HASH
+      StreamSpecification:
+        StreamViewType: NEW_AND_OLD_IMAGES
+  GetFusion:
+    Type: AWS::Serverless::Function
+    Properties:
+      Description:
+        Fn::Sub:
+        - Stack ${AWS::StackName} Function ${ResourceName}
+        - ResourceName: GetFusion
+      CodeUri: GetFusion
+      Handler: index.handler
+      Runtime: nodejs20.x
+      MemorySize: 3008
+      Timeout: 30
+      Tracing: Active
+      Environment:
+        Variables:
+          DATAFUSIONADALOG_TABLE_NAME:
+            Ref: dataFusionadaLog
+          DATAFUSIONADALOG_TABLE_ARN:
+            Fn::GetAtt:
+            - dataFusionadaLog
+            - Arn
+      Policies:
+      - DynamoDBCrudPolicy:
+          TableName:
+            Ref: dataFusionadaLog
+      Events:
+        ApiGETgetFusion:
+          Type: Api
+          Properties:
+            Path: /getFusion
+            Method: GET
+            RestApiId:
+              Ref: Api
+    Metadata:
+      BuildMethod: esbuild
+      BuildProperties:
+        EntryPoints:
+        - index.mts
+        External:
+        - '@aws-sdk/*'
+        - aws-sdk
+        Minify: false
+      SamResourceId: GetFusion
+  GetFusionLogGroup:
+    Type: AWS::Logs::LogGroup
+    DeletionPolicy: Retain
+    Properties:
+      LogGroupName:
+        Fn::Sub: /aws/lambda/${GetFusion}
+  CreateDataFusion:
+    Type: AWS::Serverless::Function
+    Properties:
+      Description:
+        Fn::Sub:
+        - Stack ${AWS::StackName} Function ${ResourceName}
+        - ResourceName: CreateDataFusion
+      CodeUri: CreateDataFusion
+      Handler: index.handler
+      Runtime: nodejs20.x
+      MemorySize: 3008
+      Timeout: 30
+      Tracing: Active
+      Events:
+        ApiPOSTcreateDataFusion:
+          Type: Api
+          Properties:
+            Path: /createDataFusion
+            Method: POST
+            RestApiId:
+              Ref: Api
+      Environment:
+        Variables:
+          DATAFUSIONADALOG_TABLE_NAME:
+            Ref: dataFusionadaLog
+          DATAFUSIONADALOG_TABLE_ARN:
+            Fn::GetAtt:
+            - dataFusionadaLog
+            - Arn
+      Policies:
+      - DynamoDBCrudPolicy:
+          TableName:
+            Ref: dataFusionadaLog
+    Metadata:
+      BuildMethod: esbuild
+      BuildProperties:
+        EntryPoints:
+        - index.mts
+        External:
+        - '@aws-sdk/*'
+        - aws-sdk
+        Minify: false
+      SamResourceId: CreateDataFusion
+  CreateDataFusionLogGroup:
+    Type: AWS::Logs::LogGroup
+    DeletionPolicy: Retain
+    Properties:
+      LogGroupName:
+        Fn::Sub: /aws/lambda/${CreateDataFusion}
+  CacheTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName: cacheTable
+      BillingMode: PAY_PER_REQUEST
+      AttributeDefinitions:
+      - AttributeName: cacheKey
+        AttributeType: S
+      KeySchema:
+      - AttributeName: cacheKey
+        KeyType: HASH
+      TimeToLiveSpecification:
+        AttributeName: expiresAt
+        Enabled: true
